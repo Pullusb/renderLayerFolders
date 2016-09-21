@@ -18,10 +18,10 @@ If you don't want that to happen, comment the line 63 of the script ('*FolderGen
 
 ### where ?
 
-**panel version**
+**panel version**  
 The panel is located in properties > layers
 
-**operator only version**
+**operator only version**  
 For the "no pannel" version, as it's name states, you just have to search "Setup Render layers" in spacebar search menu.
 Best if you don't want to overload your (already crowded) UI. ;).
 
