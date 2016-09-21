@@ -25,7 +25,8 @@ The panel is located in properties > layers
 For the "no pannel" version, as it's name states, you just have to search "Setup Render layers" in spacebar search menu.
 Best if you don't want to overload your (already crowded) UI. ;).
 
+UI panel:  
 ![RLfolder panel](https://github.com/Pullusb/images_repo/raw/master/Blender_RLfolder_panel_mouse.png)
 
-generated nodes:
+generated nodes:  
 ![RLfolder panel](https://github.com/Pullusb/images_repo/raw/master/Blender_RLfolder_nodetree.png)
