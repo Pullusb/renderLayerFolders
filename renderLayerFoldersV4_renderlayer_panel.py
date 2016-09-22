@@ -1,150 +1,132 @@
 bl_info = {
-    "name": "RenderLayersFolders",
-    "description": "Setup renderLayers in node tree to output each renderlayers in separate folder",
+    "name": "Render Layers Folders",
+    "description": "Setup render layers in node tree to output each render layer in separate folder",
     "author": "Samuel Bernou",
-    "version": (0, 0, 1),
+    "version": (0, 4, 1),
     "blender": (2, 77, 0),
-    "location": "Properties > RenderLayers",
+    "location": "Properties > Render layers",
     "warning": "",
     "wiki_url": "",
     "category": "Node" }
     
+# TODO handle OpenExrMultilayer images (layer slots)
+# TODO handle passes
 
 import bpy
 import os
 
-C = bpy.context
-scene = bpy.context.scene
-nodes = scene.node_tree.nodes
-links = scene.node_tree.links
 
-def SetEditor():
-    editorcheck = False
-    for area in bpy.context.screen.areas :
-        if area.type == 'NODE_EDITOR' :
-            if area.spaces.active.tree_type != 'CompositorNodeTree':
-                area.spaces.active.tree_type = 'CompositorNodeTree'
-            editorcheck = True
-    
-    ##check use node 
-    #bpy.context.scene.use_nodes = True
-
-
-
-def FolderGen(layer):
+def folder_gen(layer):
     base = bpy.path.abspath('//')
     base = os.path.join(base, 'Layers')
-    if not os.path.exists(base):
-            os.mkdir(base)
+    # if not os.path.exists(base):
+    #         os.mkdir(base)
 
-    layerFolder = os.path.join(base, layer)
-    if not os.path.exists(layerFolder):
-        os.mkdir(layerFolder)
-        print (layer, 'folder created')
+    layer_folder = os.path.join(base, layer)
+    # if not os.path.exists(layer_folder):
+    os.makedirs(layer_folder, exist_ok=True)
+    print (layer, 'folder created')
 
 
-def RLnode(layer, i):
-    if CIn.layer == layer:
-        return (CIn)
-    try:
-        rl = nodes[layer]
-    except:
-        rl = nodes.new(type='CompositorNodeRLayers')
-        rl.name = layer
-        rl.label = layer
-        rl.layer = layer
-        rl.location[1] = refloc[1] + (300 * i)
+def rl_node(context, layer, refloc, i):
+    nodes = context.scene.node_tree.nodes
+
+    rlnodes = [n for n in nodes if n.type == 'R_LAYERS']
+    for rl in rlnodes:
+        if rl.layer == layer:
+            # rl.name = layer
+            # rl.label = layer
+            return rl
+
+    rl = nodes.new(type='CompositorNodeRLayers')
+    rl.name = layer
+    rl.label = layer
+    rl.layer = layer
+    rl.location[1] = refloc[1] + (300 * i)
 
     return (rl)
 
 
-def CreateLayer(layer, i):
-    '''create the layer slot'''
-    FolderGen(layer)
-    rl = RLnode(layer, i)
+def create_layer(context, layer, refloc, i, file_output_node):
+    '''Create the layer slot'''
+    folder_gen(layer)
+    rl = rl_node(context, layer, refloc, i)
     layerpath = layer + '/' + layer + '_'
     
-    slots = FOut.file_slots
-    try:
-        SL = slots[layerpath]
-        #print ('SLOT FOUND')
-    except:
-        #print ('SLOT created')
-#        if len(slots) == 1 and slots[0].path == 'Image':
-#            SL = slots[0]
-#            SL.path = layerpath
-        SL = slots.new(layerpath)
-        if slots[0].path == 'Image':
-            slots.remove(FOut.inputs['Image'])
+    slots = file_output_node.file_slots
+    slot = slots.new(layerpath)
     
-    l = links.new(rl.outputs[0], FOut.inputs[layerpath])
-            
+    links = context.scene.node_tree.links
+    links.new(rl.outputs[0], file_output_node.inputs[layerpath])
+    
 
-
-class RLfolderGen(bpy.types.Operator):
+class RLFolderGen(bpy.types.Operator):
     bl_idname = "render.setup_render_layer"
     bl_label = "Setup Render layers"
-    bl_description = "generate nodes and folder for render layer"
+    bl_description = "Generate nodes and folder for render layer"
     bl_options = {"REGISTER"}
     
     def execute(self, context):
-        SetEditor()
-        # Input base
-        try:
-            CIn = nodes["Input"]
-        except:
-            CIn = nodes.new(type='CompositorNodeRLayers')
-            CIn.name = "Input"
-            CIn.label = "Input"
+        scene = context.scene
+
+        if scene.node_tree is None:
+            scene.use_nodes = True
+
+        nodes = scene.node_tree.nodes
+
+        # # Input base
+        # try:
+        #     render_layer_node = nodes["Input"]
+        # except KeyError:
+        #     render_layer_node = nodes.new(type='CompositorNodeRLayers')
+        #     render_layer_node.name = "Input"
+        #     render_layer_node.label = "Input"
         
+        # refloc = render_layer_node.location
         refloc = (0.0,0.0)
-        refloc = CIn.location
 
         # Output base
         try:
-            FOut  = nodes["Output RenderLayers"]
-        except:
-            FOut = nodes.new(type='CompositorNodeOutputFile')
-            FOut.name = "Output RenderLayers"
-            FOut.label = "Output RenderLayers"
-            FOut.base_path = '//Layers/'
+            file_output_node = nodes["Output RenderLayers"]
+        except KeyError:
+            file_output_node = nodes.new(type='CompositorNodeOutputFile')
+            file_output_node.name = "Output RenderLayers"
+            file_output_node.label = "Output RenderLayers"
+            file_output_node.base_path = '//Layers/'
 
-        FOut.location = (refloc[0] + 400, refloc[1] + 600)
+        file_output_node.location = (refloc[0] + 400, refloc[1])
 
-        global CIn
-        global FOut
-        global refloc
-        
-        rlnodes = []
-        for n in C.scene.node_tree.nodes :
-            if n.type == 'R_LAYERS':
-                rlnodes.append(n.name)
+        # Delete all inputs
+        for file_slot in file_output_node.file_slots:
+            file_output_node.file_slots.remove(file_output_node.inputs[file_slot.path])
 
-        for i, rl in enumerate(C.scene.render.layers):
-            CreateLayer(rl.name, i)
+        for i, rl in enumerate(scene.render.layers):
+            create_layer(context, rl.name, refloc, i, file_output_node)
+
+        # Reorder inputs
+        for i in range(len(file_output_node.inputs)-1):
+            print(len(file_output_node.inputs)-1, i)
+            file_output_node.inputs.move(len(file_output_node.inputs)-1, i)
+        # file_output_node.inputs.move(len(file_output_node.inputs)-1, 0)
 
         return {'FINISHED'}
 
         
 
-def RLfolder_Panel(self, context):
+def rl_folder_panel(self, context):
     """Panel of buttons in UI"""
     layout = self.layout
-    #split = layout.split(percentage=.4, align=True)
-    #split.label("Renderlayer: ")
-    #split.operator(RLfolderGen.bl_idname, text = "setup layers nodes", icon = 'FILE_FOLDER')
-    layout.operator(RLfolderGen.bl_idname, text = "setup layers output nodes", icon = 'NEWFOLDER')
-
+    layout.operator(RLFolderGen.bl_idname, text = "Setup layers output nodes", icon = 'NEWFOLDER')
 
 #----REGISTER
 
 def register():
     bpy.utils.register_module(__name__)
-    bpy.types.RENDERLAYER_PT_layers.append(RLfolder_Panel)
+    bpy.types.RENDERLAYER_PT_layers.append(rl_folder_panel)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-    bpy.types.RENDERLAYER_PT_layers.remove(RLfolder_Panel)
+    bpy.types.RENDERLAYER_PT_layers.remove(rl_folder_panel)
 
 if __name__ == "__main__":
     register()
