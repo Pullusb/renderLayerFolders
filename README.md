@@ -18,7 +18,6 @@ If you don't want that to happen, comment the line 52 of the script '*folder_gen
 
 ### where ?
 
-**panel version**  
 The panel is located in properties > layers
 <!--
 **operator only version**  
