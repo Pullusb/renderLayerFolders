@@ -1,5 +1,9 @@
 # render Layer Folders
 setup automatically composite nodes to export render layers separately
+  
+**[Download latest](https://raw.githubusercontent.com/Pullusb/renderLayerFolders/master/render_layer_folders.py)** (right click, save Target as)  
+    
+---
 
 ### Description
 
