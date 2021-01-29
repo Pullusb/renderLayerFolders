@@ -8,11 +8,11 @@ setup automatically composite nodes to export render layers separately
 ### Description
 
 The renderlayers, input nodes are created from renderlayers scene names. Then connected to one "output file" node with multiple input.
-everything will be in a folder named "Layers" at the same level of the blend file (this is easily tweakable after, it is set by the base path of the output file node)
+Everything will be in a folder named "Layers" at the same level of the blend file (this is easily tweakable after, it is set by the base path of the output file node)
 each render layer will be exported in a separate subfolder.
 
 e.g:
-for a renderlayer nammed 'background' image will be:
+for a renderlayer named 'background' image will be:
 //Layers/background/background_0001.png
 
 note that it will generate folders hierarchy at the moment you launch the operator (without render needed)
